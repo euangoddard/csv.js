@@ -7,6 +7,10 @@ There are two modes of operation:
 - Working with un-headed CSV data that are represented in Javascript as arrays.
 - Working with CSV data with headers that are represented in Javascript as objects.
 
+## Requirements
+
+- [underscore.js](http://documentcloud.github.com/underscore/)
+
 ##Working with un-headed CSV data
 
 The ``csv`` module exposes two functions to deal with this type of data: `encode` and `decode`. These functions take an array of arrays and turn them into a CSV string and vice-versa respectively.
