@@ -1,41 +1,4 @@
 /**
- * Utility functionality to assist tests
- */
-
-var is_array = function (test_object) {
-    return typeof test_object === "object" && test_object.constructor === Array;
-};
-
-var are_rows_equal = function (found_rows, expected_rows) {
-    if (!(is_array(found_rows) && is_array(expected_rows))) {
-        return false;
-    }
-    if (found_rows.length !== expected_rows.length) {
-        return false;
-    }
-    
-    for (var row_index=0, found_row, expected_row; row_index < found_rows.length; row_index += 1) {
-        found_row = found_rows[row_index];
-        expected_row = expected_rows[row_index];
-        
-        if (!(is_array(found_row) && is_array(expected_row))) {
-            return false;
-        }
-        if (found_row.length !== expected_row.length) {
-            return false;
-        }
-        
-        for (var col_index=0; col_index<found_row.length; col_index += 1) {
-            if (found_row[col_index] !== expected_row[col_index]) {
-                return false;
-            }
-        }
-    }
-    return true;
-};
-
-
-/**
  * Tests for the decoding function
  */
 
@@ -43,56 +6,56 @@ test("No quoting single row decoded", function () {
     var raw_csv_data = "a,b,c\r\n";
     var expected_result = [["a", "b", "c"]];
     
-    ok(are_rows_equal(csv.decode(raw_csv_data), expected_result));
+    ok(_.isEqual(csv.decode(raw_csv_data), expected_result));
 });
 
 test("Quoted single row decoded", function () {
     var raw_csv_data = '"a","b","c"\r\n';
     var expected_result = [["a", "b", "c"]];
     
-    ok(are_rows_equal(csv.decode(raw_csv_data), expected_result));
+    ok(_.isEqual(csv.decode(raw_csv_data), expected_result));
 });
 
 test("Quotation mark in column decoded", function () {
     var raw_csv_data = '"a ""quote""",b,c\r\n';
     var expected_result = [['a "quote"', "b", "c"]];
     
-    ok(are_rows_equal(csv.decode(raw_csv_data), expected_result));
+    ok(_.isEqual(csv.decode(raw_csv_data), expected_result));
 });
 
 test("Commas inside column decoded", function () {
     var raw_csv_data = '"a,b","c,d","e,f,g"\r\n';
     var expected_result = [['a,b', 'c,d', 'e,f,g']];
     
-    ok(are_rows_equal(csv.decode(raw_csv_data), expected_result));
+    ok(_.isEqual(csv.decode(raw_csv_data), expected_result));
 });
 
 test("Multi-line columns decoded", function () {
     var raw_csv_data = '"a\nb",c,d\r\n';
     var expected_result = [['a\nb', 'c', 'd']];
     
-    ok(are_rows_equal(csv.decode(raw_csv_data), expected_result));
+    ok(_.isEqual(csv.decode(raw_csv_data), expected_result));
 });
 
 test("Multiple rows of the same length decoded", function () {
     var raw_csv_data = 'a\r\nb\r\nc\r\n';
     var expected_result = [['a'], ['b'], ['c']];
 
-    ok(are_rows_equal(csv.decode(raw_csv_data), expected_result));
+    ok(_.isEqual(csv.decode(raw_csv_data), expected_result));
 });
 
 test("Multiple rows of the different lengths decoded", function () {
     var raw_csv_data = 'a\r\nb,c\r\nd,e,f\r\n';
     var expected_result = [['a'], ['b', 'c'], ['d', 'e', 'f']];
 
-    ok(are_rows_equal(csv.decode(raw_csv_data), expected_result));
+    ok(_.isEqual(csv.decode(raw_csv_data), expected_result));
 });
 
 test("Single column, multiple rows decoded", function () {
     var raw_csv_data = 'a\r\nb\r\nc\r\n';
     var expected_result = [['a'], ['b'], ['c']];
 
-    ok(are_rows_equal(csv.decode(raw_csv_data), expected_result));
+    ok(_.isEqual(csv.decode(raw_csv_data), expected_result));
 });
 
 
