@@ -41,21 +41,21 @@ var csv = {};
     
     var REQUIRES_QUOTING_PATTERN = new RegExp("\\r?\\n|\\r|,|\"");
     
-    var encode_row = function(row) {
-        var column_index;
-        var column_count;
-        var field_data;
+    /**
+     * Encode ``row` to a suitable CSV string.
+     * 
+     * @private
+     * @param {Array} row The row data to encode
+     * @returns {String} The row as a CSV string
+     */
+    var encode_row = function (row) {
         var output_data = "";
         
-        if (!is_array(row)) {
+        if (!_.isArray(row)) {
             throw TypeError("The row data must be an array");
         }
         
-        column_count = row.length;
-        
-        for (column_index=0; column_index<column_count; column_index += 1) {
-            field_data = row[column_index];
-            
+        _.each(row, function (field_data, column_index) {
             if (field_data.constructor !== String) {
                 field_data = field_data.toString();
             }
@@ -68,28 +68,17 @@ var csv = {};
                 field_data = '"' + field_data + '"';
             }
             
-            output_data = output_data + (column_index ? ",": "") + field_data; 
-        }
+            output_data = output_data + (column_index ? ",": "") + field_data;
+        });
         
         return output_data;
     };
     
     
     /**
-     * Test whether ``test_object`` is really an Array
-     * @param {Any} test_object The object being checked
-     * @return {Boolean} Whether test_object is really an Array
-     */
-    var is_array = function (test_object) {
-        return (
-            typeof test_object === "object" &&
-            test_object.constructor === Array
-        );
-    };
-    
-    
-    /**
-     * Decode CSV data into an array of rows each containing an array of columns
+     * Decode CSV data into an array of rows each containing an array of
+     * columns.
+     * 
      * @param {String} raw_csv_data CSV data as a string
      * @return {Array} Rows and columns of CSV data
      */
@@ -144,24 +133,88 @@ var csv = {};
      
      
      /**
-      * Encode CSV data in the form of an array of rows each containing an array of
-      * columns into a string of CSV data
+      * Decode CSV data into an array of rows each containing an object for each
+      * column keyed using the first row as a header row
+      * @param {String} raw_csv_data CSV data as a string
+      * @return {Array} Rows and columns of CSV data
+      */
+     module.decode_to_objects = function (raw_csv_data) {
+         var csv_data = module.decode(raw_csv_data);
+         var header_row = csv_data[0];
+         
+         // Create a blank row object to be used in case there are missing data
+         // points at the end of the row
+         var blank_row_object = {};
+         _.each(header_row, function (key) {
+             blank_row_object[key] = "";
+         });
+         
+         
+         var rows_as_objects = [];
+         _.each(csv_data.slice(1), function (row_as_array) {
+             var row_as_object = _.extend({}, blank_row_object);
+             _.each(row_as_array, function (value, index) {
+                 row_as_object[header_row[index]] = value;
+             });
+             rows_as_objects.push(row_as_object);
+         });
+         
+         return rows_as_objects;
+     };
+     
+     
+     /**
+      * Encode CSV data in the form of an array of rows each containing an array
+      * of columns into a string of CSV data
       * @param {Array} csv_data
       * @return {String} Encoded CSV data
       */
      module.encode = function (csv_data) {
-         var row_index;
-         var row_count;
          var output_string = "";
          
-         if (!is_array(csv_data)) {
+         if (!_.isArray(csv_data)) {
              throw TypeError("The CSV data must be an array of arrays");
          }
          
-         row_count = csv_data.length;
-         for (row_index=0; row_index<row_count; row_index += 1) {
-             output_string = output_string + encode_row(csv_data[row_index]) + "\r\n";
+         _.each(csv_data, function (raw_row_data) {
+             output_string = output_string + encode_row(raw_row_data) + "\r\n";
+         });
+         
+         return output_string;
+     };
+     
+     
+     /**
+      * Encode an array of objects to CSV data using ``headers`` to output the
+      * header row and determine the order of the data from the objects.
+      * 
+      * If a key is not found on the object ``missing_value`` will be
+      * substituted in its place.
+      * 
+      * @param {Array} objects_to_encode The row data as objects to encode
+      * @param {Array} headers The (ordered) headers for the file
+      * @param {String} missing_value The value to use when a key is not found
+      * on an object (default "")
+      * @returns {String} Encoded CSV data
+      */
+     module.encode_objects = function (objects_to_encode, headers, missing_value) {
+         if (!_.isArray(headers)) {
+             throw TypeError("headers must be an array");
          }
+         
+         var output_string = encode_row(headers) + "\r\n";
+         missing_value = missing_value || "";
+         _.each(objects_to_encode, function (object_to_encode) {
+             var row_as_array = [];
+             _.each(headers, function (object_key) {
+                 if (object_key in object_to_encode) {
+                     row_as_array.push(object_to_encode[object_key]);
+                 } else {
+                     row_as_array.push(missing_value);
+                 }
+             });
+             output_string = output_string + encode_row(row_as_array) + "\r\n";
+         });
          
          return output_string;
      };

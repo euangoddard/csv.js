@@ -1,7 +1,7 @@
 /**
  * Tests for the decoding function
  */
-
+module("decode");
 test("No quoting single row decoded", function () {
     var raw_csv_data = "a,b,c\r\n";
     var expected_result = [["a", "b", "c"]];
@@ -62,6 +62,7 @@ test("Single column, multiple rows decoded", function () {
 /**
  * Tests for the encoding function
  */
+module("encode");
 test("Encode takes an array of arrays", function () {
     expect(3);
     raises(function () { csv.encode("a string"); }, TypeError);
@@ -119,4 +120,101 @@ test("Non-string values are coerced to strings where possible", function () {
     var csv_data = [["a", 1, ["Array data", "second item"], {'object': 'yes'}, true]];
     var expected_output = "a,1,\"Array data,second item\",[object Object],true\r\n";
     equal(csv.encode(csv_data), expected_output);
+});
+
+
+/**
+ *  Tests for decode_to_objects 
+ */
+module("decode_as_objects");
+test("Only a header is accomodated", function () {
+    var expected_data = [];
+    var csv_data = "First name,Last name,Username\r\n";
+    ok(_.isEqual(expected_data, csv.decode_to_objects(csv_data)));
+});
+
+test("Same number of columns as headings", function () {
+    var expected_data = [
+        {"First name": "James", "Last name": "Bond", "Username": "jb007"},
+        {"First name": "Ernst", "Last name": "Blofeld", "Username": "spectre"}
+        ];
+    var csv_data = "First name,Last name,Username\r\nJames,Bond,jb007\r\nErnst,Blofeld,spectre\r\n";
+    ok(_.isEqual(expected_data, csv.decode_to_objects(csv_data)));
+});
+
+test("Some columns missing", function () {
+    var expected_data = [
+        {"First name": "James", "Last name": "Bond", "Middle name": "", "Username": "jb007"},
+        {"First name": "Ernst", "Last name": "Blofeld", "Middle name": "Stavro", "Username": ""}
+        ];
+    var csv_data = "First name,Last name,Middle name,Username\r\nJames,Bond,,jb007\r\nErnst,Blofeld,Stavro\r\n";
+    ok(_.isEqual(expected_data, csv.decode_to_objects(csv_data)));
+});
+
+
+/**
+ * Tests for encode_objects
+ */
+module("encode_objects");
+test("Incorrect headers", function () {
+    expect(2);
+    
+    raises(function () {
+        csv.encode_objects([]);
+    }, TypeError);
+    
+    raises(function () {
+        csv.encode_objects([], "headers");
+    }, TypeError);
+});
+
+test("No data", function () {
+    var headers = ["Width", "Height", "Depth"];
+    var expected_output = "Width,Height,Depth\r\n";
+    
+    ok(_.isEqual(expected_output, csv.encode_objects([], headers)));
+});
+
+test("Headings in order", function () {
+    var headers = ["Width", "Height", "Depth"];
+    var expected_output = "Width,Height,Depth\r\n100,100,100\r\n50,100,150\r\n";
+    var objects_to_encode = [
+        {Width: 100, Height: 100, Depth: 100},
+        {Width: 50, Height: 100, Depth: 150}
+        ];
+    
+    ok(_.isEqual(expected_output, csv.encode_objects(objects_to_encode, headers)));
+});
+
+test("Headings out of order", function () {
+    var headers = ["Width", "Height", "Depth"];
+    var expected_output = "Width,Height,Depth\r\n100,100,100\r\n50,100,150\r\n";
+    var objects_to_encode = [
+        {Width: 100, Height: 100, Depth: 100},
+        {Depth: 150, Height: 100, Width: 50}
+        ];
+    
+    ok(_.isEqual(expected_output, csv.encode_objects(objects_to_encode, headers)));
+});
+
+test("Missing key on object", function () {
+    var headers = ["Width", "Height", "Depth"];
+    var expected_output = "Width,Height,Depth\r\n100,,\r\n,,150\r\n";
+    var objects_to_encode = [
+        {Width: 100},
+        {Depth: 150}
+        ];
+    
+    ok(_.isEqual(expected_output, csv.encode_objects(objects_to_encode, headers)));
+});
+
+test("Custom missing key value", function () {
+    var headers = ["Width", "Height", "Depth"];
+    var expected_output = "Width,Height,Depth\r\n100,0,0\r\n0,0,150\r\n";
+    var objects_to_encode = [
+        {Width: 100},
+        {Depth: 150}
+        ];
+    
+    ok(_.isEqual(expected_output, csv.encode_objects(objects_to_encode, headers, "0")));
 });
