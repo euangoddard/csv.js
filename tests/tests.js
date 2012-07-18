@@ -58,6 +58,12 @@ test("Single column, multiple rows decoded", function () {
     ok(_.isEqual(csv.decode(raw_csv_data), expected_result));
 });
 
+test("No trailing empty line decoded", function () {
+    var raw_csv_data = 'a\r\nb\r\nc';
+    var expected_result = [['a'], ['b'], ['c']];
+
+    ok(_.isEqual(csv.decode(raw_csv_data), expected_result));
+});
 
 /**
  * Tests for the encoding function

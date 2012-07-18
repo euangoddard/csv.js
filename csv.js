@@ -127,6 +127,12 @@ var csv = {};
             
             current_row.push(matching_string);
         }
+        
+        // Check to see if there is any left-over data. This occurs when the
+        // file does not end with a line-terminator
+        if (current_row.length && current_row.join("")) {
+            rows.push(current_row);
+        }
 
         return rows;
      };
